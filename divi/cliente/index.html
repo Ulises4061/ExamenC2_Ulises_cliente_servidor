@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mensajes-Mostrar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url('/divi/img/fondo_examen1.png');
+            background-size: cover;
+            background-position: center;
+        }
+       .message-container {
+            margin: 20px;
+        }
+       .message-input {
+            padding: 10px;
+            width: 50%;
+        }
+       .message-type {
+            padding: 10px;
+            width: 20%;
+        }
+       .send-button {
+            padding: 10px;
+            background-color: #4CAF50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+       .send-button:hover {
+            background-color: #3e8e41;
+        }
+       .messages-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+       .messages-list li {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+       .messages-list li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="message-container">
+        <h1>Mensajes</h1>
+        <input type="text" id="message" class="message-input" placeholder="Escribe tu mensaje">
+        <select id="type" class="message-type">
+            <option value="tudent">Estudiante</option>
+            <option value="teacher">Docente</option>
+        </select>
+        <button class="send-button" onclick="sendMessage()">Enviar</button>
+    </div>
+    <div class="message-container">
+        <h2>Estudiantes</h2>
+        <ul id="studentsMessages" class="messages-list"></ul>
+    </div>
+    <div class="message-container">
+        <h2>Docentes</h2>
+        <ul id="teachersMessages" class="messages-list"></ul>
+    </div>
+
+    <script>
+        function sendMessage() {
+            const message = document.getElementById('message').value;
+            const userType = document.getElementById('type').value;
+
+            fetch('http://localhost:3000/send', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ message, userType })
+            }).then(response => response.text()).then(data => console.log(data));
+        }
+
+        function startListening() {
+            const studentsEventSource = new EventSource('http://localhost:3000/events/students');
+            studentsEventSource.onmessage = function(event) {
+                const messages = JSON.parse(event.data);
+                const studentsList = document.getElementById('studentsMessages');
+                studentsList.innerHTML = '';
+                messages.forEach(msg => {
+                    const li = document.createElement('li');
+                    li.textContent = msg;
+                    studentsList.appendChild(li);
+                });
+            };
+
+            const teachersEventSource = new EventSource('http://localhost:3000/events/teachers');
+            teachersEventSource.onmessage = function(event) {
+                const messages = JSON.parse(event.data);
+                const teachersList = document.getElementById('teachersMessages');
+                teachersList.innerHTML = '';
+                messages.forEach(msg => {
+                    const li = document.createElement('li');
+                    li.textContent = msg;
+                    teachersList.appendChild(li);
+                });
+            };
+        }
+
+        window.onload = startListening;
+    </script>
+</body>
+</html>
